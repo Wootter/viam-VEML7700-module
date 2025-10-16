@@ -1,0 +1,13 @@
+{
+  "components": [
+    {
+      "name": "light-sensor",
+      "model": "wootter:veml7700-sensor:linux",
+      "type": "sensor",
+      "namespace": "rdk",
+      "attributes": {
+        "bus_number": 1
+      }
+    }
+  ]
+}

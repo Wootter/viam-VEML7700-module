@@ -1,0 +1,64 @@
+[build-system]
+requires = ["setuptools>=45", "wheel", "setuptools_scm[toml]>=6.2"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "viam-veml7700-module"
+version = "1.0.0"
+description = "Viam module for VEML7700 ambient light sensor on Raspberry Pi"
+readme = "README.md"
+requires-python = ">=3.7"
+license = {text = "Apache-2.0"}
+keywords = ["viam", "robotics", "veml7700", "sensor", "raspberry-pi", "iot", "light"]
+authors = [
+    {name = "VEML7700 Module Contributors"}
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: Apache Software License",
+    "Operating System :: POSIX :: Linux",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.7",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Topic :: Scientific/Engineering",
+    "Topic :: Software Development :: Embedded Systems",
+]
+
+dependencies = [
+    "viam-sdk>=0.4.0",
+    "smbus2",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0",
+    "pytest-asyncio>=0.20",
+    "black>=22.0",
+    "mypy>=0.990",
+]
+
+[project.urls]
+Homepage = "https://github.com/Wootter/viam-veml7700-module"
+Documentation = "https://github.com/Wootter/viam-veml7700-module#readme"
+Repository = "https://github.com/Wootter/viam-veml7700-module"
+Issues = "https://github.com/Wootter/viam-veml7700-module/issues"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.black]
+line-length = 100
+target-version = ['py37', 'py38', 'py39', 'py310', 'py311']
+
+[tool.mypy]
+python_version = "3.7"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = false

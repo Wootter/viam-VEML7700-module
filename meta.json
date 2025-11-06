@@ -1,18 +1,18 @@
 {
-  "module_id": "wootter:veml7700-sensor",
+  "$schema": "https://dl.viam.dev/module.schema.json",
+  "module_id": "wootter:veml7700",
   "visibility": "public",
-  "url": "https://github.com/Wootter/viam-veml7700-module",
+  "url": "https://github.com/Wootter/viam-veml7700-module.git",
   "description": "A Viam module for the VEML7700 ambient light sensor on Raspberry Pi",
   "models": [
     {
       "api": "rdk:component:sensor",
-      "model": "wootter:veml7700-sensor:linux"
+      "model": "wootter:sensor:veml7700"
     }
   ],
-  "entrypoint": "exec.sh",
+  "entrypoint": "run.sh",
   "build": {
-    "setup": "./setup.sh",
-    "build": "make module.tar.gz",
+    "build": "tar -czf module.tar.gz run.sh requirements.txt src",
     "path": "module.tar.gz",
     "arch": ["linux/arm64", "linux/amd64"]
   }

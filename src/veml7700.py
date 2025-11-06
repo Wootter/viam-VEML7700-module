@@ -1,5 +1,19 @@
-import smbus2 as smbus
+from typing import ClassVar, Mapping, Any, Optional
+from typing_extensions import Self
+
+from viam.module.types import Reconfigurable
+from viam.proto.app.robot import ComponentConfig
+from viam.proto.common import ResourceName
+from viam.resource.base import ResourceBase
+from viam.resource.types import Model, ModelFamily
+
+from viam.components.sensor import Sensor
+from viam.logging import getLogger
+import asyncio
 import time
+import smbus2 as smbus
+
+LOGGER = getLogger(__name__)
 
 
 class VEML7700Result:
@@ -16,7 +30,7 @@ class VEML7700Result:
         return self.error_code == VEML7700Result.ERR_NO_ERROR
 
 
-class VEML7700:
+class VEML7700Sensor:
     """
     VEML7700 Light Sensor Driver
     This sensor reads ambient light levels using the VEML7700 sensor via I2C.
@@ -107,3 +121,90 @@ class VEML7700:
                 self.bus.close()
             except:
                 pass
+
+
+class VEML7700(Sensor, Reconfigurable):
+    """
+    VEML7700 represents a light sensor that measures ambient light in lux.
+    """
+    
+    MODEL: ClassVar[Model] = Model(ModelFamily("wootter", "sensor"), "veml7700")
+    
+    def __init__(self, name: str):
+        super().__init__(name)
+        self.sensor = None
+        self.bus_number = 1
+        LOGGER.info(f"{self.__class__.__name__} initialized.")
+
+    @classmethod
+    def new(cls, config: ComponentConfig, dependencies: Mapping[ResourceName, ResourceBase]) -> Self:
+        instance = cls(config.name)
+        instance.reconfigure(config, dependencies)
+        return instance
+
+    @classmethod
+    def validate(cls, config: ComponentConfig):
+        # Bus number is optional, defaults to 1
+        return ([], [])
+
+    def reconfigure(self, config: ComponentConfig, dependencies: Mapping[ResourceName, ResourceBase]):
+        # Optional: allow custom I2C bus number
+        if "bus" in config.attributes.fields:
+            self.bus_number = int(config.attributes.fields["bus"].number_value)
+        
+        # Initialize sensor
+        self.sensor = VEML7700Sensor(self.bus_number)
+        try:
+            self.sensor.initialize()
+            LOGGER.info(f"VEML7700 sensor initialized on I2C bus {self.bus_number}")
+        except Exception as e:
+            LOGGER.error(f"Failed to initialize VEML7700: {e}")
+            raise
+
+    async def get_readings(self, extra: Optional[Mapping[str, Any]] = None, **kwargs) -> Mapping[str, Any]:
+        """
+        Obtain the measurements from the VEML7700 sensor.
+        
+        Returns:
+            Mapping[str, Any]: Light level readings in lux.
+        """
+        # Retry logic: VEML7700 sensors may need multiple attempts
+        max_retries = 3
+        retry_delay = 0.1  # 100ms between retries
+        
+        for attempt in range(max_retries):
+            result = await asyncio.to_thread(self.sensor.read)
+
+            if result.is_valid():
+                lux = result.lux
+                
+                LOGGER.info(f"Light level: {lux} lux (attempt {attempt + 1})")
+                
+                return {
+                    "lux": lux,
+                    "light_level": lux
+                }
+            else:
+                error_messages = {
+                    VEML7700Result.ERR_NOT_FOUND: "VEML7700 sensor not found on I2C bus",
+                    VEML7700Result.ERR_READ_ERROR: "Error reading from VEML7700 sensor"
+                }
+                error_msg = error_messages.get(result.error_code, "Unknown error")
+                
+                if attempt < max_retries - 1:
+                    LOGGER.warning(f"VEML7700 error on attempt {attempt + 1}/{max_retries}: {error_msg}. Retrying...")
+                    await asyncio.sleep(retry_delay)
+                else:
+                    LOGGER.error(f"VEML7700 error after {max_retries} attempts: {error_msg}")
+                    return {
+                        "error": error_msg,
+                        "error_code": result.error_code
+                    }
+
+    async def close(self):
+        """
+        Clean up resources when the module is shut down.
+        """
+        if self.sensor:
+            await asyncio.to_thread(self.sensor.cleanup)
+            LOGGER.info("VEML7700 sensor closed")

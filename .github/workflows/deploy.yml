@@ -3,7 +3,7 @@ name: Deploy Viam Module
 on:
   push:
     tags:
-      - "[0-9]+.[0-9]+.[0-9]+"
+      - "v[0-9]+.[0-9]+.[0-9]+"
 
 jobs:
   publish:
@@ -23,12 +23,16 @@ jobs:
       
       - name: Create module if it doesn't exist
         run: |
-          viam module create --name veml7700-sensor --public-namespace wootter || echo "Module already exists or creation not needed"
+          viam module create --name veml7700 --public-namespace wootter || echo "Module already exists or creation not needed"
+      
+      - name: Strip v prefix from tag
+        id: version
+        run: echo "VERSION=${GITHUB_REF_NAME#v}" >> $GITHUB_OUTPUT
       
       - name: build and publish
         uses: viamrobotics/build-action@v1
         with:
-          version: ${{ github.ref_name }}
+          version: ${{ steps.version.outputs.VERSION }}
           ref: ${{ github.sha }}
           key-id: ${{ secrets.VIAM_API_KEY_ID }}
           key-value: ${{ secrets.VIAM_API_KEY }}

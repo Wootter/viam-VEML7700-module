@@ -29,7 +29,8 @@ jobs:
     - name: Login to Viam
       run: viam login api-key --key-id ${{ secrets.VIAM_API_KEY_ID }} --key ${{ secrets.VIAM_API_KEY }}
     
-    - name: Upload module
+    - name: Create and upload module
       run: |
-        viam module upload --module ./meta.json --version ${{ steps.version.outputs.VERSION }} --platform linux/arm64 --upload .
-        viam module upload --module ./meta.json --version ${{ steps.version.outputs.VERSION }} --platform linux/amd64 --upload .
+        viam module create --name veml7700 --public-namespace wootter
+        viam module upload --version ${{ steps.version.outputs.VERSION }} --platform linux/arm64 --upload .
+        viam module upload --version ${{ steps.version.outputs.VERSION }} --platform linux/amd64 --upload .
